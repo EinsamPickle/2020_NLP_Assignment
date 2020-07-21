@@ -1,0 +1,8 @@
+*.flv
+*.mp3
+*.wav
+*.txt
+*.pcm
+chunks/
+image/
+venv/

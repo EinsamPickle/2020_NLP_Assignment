@@ -20,7 +20,7 @@ def main():
     for line in lines:
         print(line.rstrip())
         seg_list = jieba.cut(line, cut_all=True)
-        print("[]".join(seg_list))
+        print("/".join(seg_list))
         temp_w = 0
         temp_x = ""
         for x, w in jieba.analyse.extract_tags(line, withWeight=True):

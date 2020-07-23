@@ -107,32 +107,6 @@ def chunk_split_length_limit(chunk, min_silence_len=700, length_limit=60 * 1000,
     return done_chunks
 
 
-def chunk_join_length_limit(chunks, joint_silence_len=1300, length_limit=60 * 1000):
-    '''
-    将声音文件合并，并限定单句最长时间，返回结果为列表形式
-    Args:
-        chunk: 录音文件
-        joint_silence_len: 合并时文件间隔，默认1.3秒。
-        length_limit：合并后单个文件长度不超过该值，默认1分钟。
-    Return:
-        adjust_chunks：合并后的列表
-    '''
-    # 
-    silence = AudioSegment.silent(duration=joint_silence_len)
-    adjust_chunks = []
-    temp = AudioSegment.empty()
-    for chunk in chunks:
-        length = len(temp) + len(silence) + len(chunk)  # 预计合并后长度
-        if length < length_limit:  # 小于1分钟，可以合并
-            temp += silence + chunk
-        else:  # 大于1分钟，先将之前的保存，重新开始累加
-            adjust_chunks.append(temp)
-            temp = chunk
-    else:
-        adjust_chunks.append(temp)
-    return adjust_chunks
-
-
 def get_file_content(filePath):
     with open(filePath, 'rb') as fp:
         return fp.read()

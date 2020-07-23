@@ -1,8 +1,6 @@
 import re
-import requests
 from urllib import error
-from bs4 import BeautifulSoup
-import os
+
 import jieba.analyse
 import requests
 

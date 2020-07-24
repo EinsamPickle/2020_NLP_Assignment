@@ -23,10 +23,13 @@ def main(name):
     joint_silence_len = 1300  # 段拼接时加入1300毫秒间隔用于断句
 
     # 将录音文件拆分成适合百度语音识别的大小
+    total = prepare_for_baiduaip(name, sound, silence_thresh, min_silence_len, length_limit, abandon_chunk_len,
+                                 joint_silence_len)
 
 
 def prepare_for_baiduaip(name, sound, silence_thresh=-70, min_silence_len=700, length_limit=60 * 1000,
-                         abandon_chunk_len=500):
+                         abandon_chunk_len=500, joint_silence_len=1300):
+    # 按句子停顿，拆分成长度不大于1分钟录音片段
     print('开始拆分(如果录音较长，请耐心等待)\n', ' *' * 30)
     chunks = chunk_split_length_limit(sound, min_silence_len=min_silence_len, length_limit=length_limit,
                                       silence_thresh=silence_thresh)  # silence time:700ms and silence_dBFS<-70dBFS
@@ -62,13 +65,13 @@ def prepare_for_baiduaip(name, sound, silence_thresh=-70, min_silence_len=700, l
 
 
 def chunk_split_length_limit(chunk, min_silence_len=700, length_limit=60 * 1000, silence_thresh=-70):
-    """
+    '''
     将声音文件按正常语句停顿拆分，并限定单句最长时间，返回结果为列表形式
         chunk: 录音文件
         min_silence_len: 拆分语句时，静默满足该长度，则拆分，默认0.7秒。
         length_limit：拆分后单个文件长度不超过该值，默认1分钟。
         silence_thresh：小于-70dBFS以下的为静默
-    """
+    '''
     todo_arr = []  # 待处理
     done_chunks = []  # 处理完
     todo_arr.append([chunk, min_silence_len, silence_thresh])
@@ -102,6 +105,32 @@ def chunk_split_length_limit(chunk, min_silence_len=700, length_limit=60 * 1000,
             todo_arr = doning_arr + todo_arr
 
     return done_chunks
+
+
+def chunk_join_length_limit(chunks, joint_silence_len=1300, length_limit=60 * 1000):
+    '''
+    将声音文件合并，并限定单句最长时间，返回结果为列表形式
+    Args:
+        chunk: 录音文件
+        joint_silence_len: 合并时文件间隔，默认1.3秒。
+        length_limit：合并后单个文件长度不超过该值，默认1分钟。
+    Return:
+        adjust_chunks：合并后的列表
+    '''
+    #
+    silence = AudioSegment.silent(duration=joint_silence_len)
+    adjust_chunks = []
+    temp = AudioSegment.empty()
+    for chunk in chunks:
+        length = len(temp) + len(silence) + len(chunk)  # 预计合并后长度
+        if length < length_limit:  # 小于1分钟，可以合并
+            temp += silence + chunk
+        else:  # 大于1分钟，先将之前的保存，重新开始累加
+            adjust_chunks.append(temp)
+            temp = chunk
+    else:
+        adjust_chunks.append(temp)
+    return adjust_chunks
 
 
 def get_file_content(filePath):
